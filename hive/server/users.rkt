@@ -66,7 +66,7 @@
 (define users-monitor null)
 
 (define (on-change user)
-  (define info (cons 'user (serialize user without-password)))
+  (define info `(#f user ,@(serialize user without-password)))
   (define (send-change receiver)
     (thread-send receiver info #f))
   (map send-change users-monitor))
