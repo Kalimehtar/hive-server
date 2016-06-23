@@ -1,5 +1,5 @@
 #lang racket
-(provide (struct-out user) users find-by-name add-user! current-user current-role auth)
+(provide (struct-out user) users find-by-name add-user! current-user current-role auth set-online!)
 
 (require hive/common/users
          hive/common/serialize
@@ -34,7 +34,8 @@
 
 (define (add-user! new-user) 
   (set! users (cons new-user users))
-  (store-save! new-user))
+  (store-save! new-user)
+  (on-change new-user))
 
 (define (find-by-name a-name)
   (for/first ([u (in-list users)]
@@ -71,6 +72,10 @@
     (thread-send receiver info #f))
   (map send-change users-monitor))
 
+(define (set-online! user value)
+  (set-user-online! user value)
+  (on-change user))
+
 (register-std-command! '(users monitor)
                        (λ ()
                          (define receiver (session-receiver (current-session)))
@@ -89,15 +94,13 @@
        [found-user
         (cond
           [(string=? password (user-password found-user))
-           (set-user-online! found-user #t)
-           (on-change found-user)
+           (set-online! found-user #t)
            (define user-box (make-custodian-box (current-custodian) user))
            ;; when current thread dies, main-custodian still live
            (parameterize ([current-custodian main-custodian])
              (thread (λ ()
                        (sync user-box)
-                       (set-user-online! found-user #f)
-                       (on-change found-user))))
+                       (set-online! found-user #f))))
            found-user]
           [else #f])]
        [(null? users)
