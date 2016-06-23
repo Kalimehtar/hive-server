@@ -23,13 +23,16 @@
               (define user auth-result)
               (define receiver (thread (λ ()
                                          (let loop ()
-                                           (write/flush (thread-receive) out)
-                                           (loop)))))
+                                           (with-handlers ([(const #t)
+                                                            (λ (x) (custodian-shutdown-all
+                                                                    (current-custodian)))])
+                                             (write/flush (thread-receive) out)
+                                             (loop))))))
               (thread (λ ()
                         (let loop ()
-                          (thread-send receiver 'keepalive)
-                          (sleep 10)
-                          (loop))))
+                          (when (thread-send receiver 'keepalive #f)
+                            (sleep 10)
+                            (loop)))))
               (define session (register-new-session! user receiver))
               (write/flush 'ok out)
               (parameterize ([current-user user]
@@ -61,8 +64,8 @@
       [(list-rest id cmd)
        (thread (λ ()
                  (thread-send receiver
-                              (cons id (process-command cmd)))))]
-      [_ (thread-send receiver 'bad-syntax)])
+                              (cons id (process-command cmd)) #f)))]
+      [_ (thread-send receiver 'bad-syntax #f)])
     (get-commands-loop in receiver)))
 
 (define (exn->list exn)
