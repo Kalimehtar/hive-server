@@ -102,15 +102,15 @@
                        (sync user-box)
                        (set-online! found-user #f))))
            found-user]
-          [else #f])]
+          [else 'bad-password])]
        [(null? users)
         ((on-null-users) username password)]
        [else
         ((on-no-such-user) username password)])]
-    [(list username password session)
-     (and-let* ([found-user (find-by-name username)]
-                (string=? password (user-password found-user))
-                [found-session (find-session session)]
-                (eq? found-user (session-user found-session)))
-       session)]
-    [else #f]))
+    ;[(list username password session)
+    ; (and-let* ([found-user (find-by-name username)]
+    ;            (string=? password (user-password found-user))
+    ;            [found-session (find-session session)]
+    ;            (eq? found-user (session-user found-session)))
+    ;   session)]
+    [else 'bad-auth-syntax]))

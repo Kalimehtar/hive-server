@@ -15,7 +15,7 @@
 ;;    else => handle broadcast-events in current session
 (define (handle in out)
   (define auth-result (auth (read/timeout in)))
-  (with-handlers ([(const #t) (compose displayln exn->list)])
+  (with-handlers ([exn:fail? (compose displayln exn->list)])
     (dynamic-wind
      void
      (λ () (cond 
@@ -23,21 +23,17 @@
               (define user auth-result)
               (define receiver (thread (λ ()
                                          (let loop ()
-                                           (with-handlers ([(const #t)
-                                                            (λ (x) (custodian-shutdown-all
-                                                                    (current-custodian)))])
-                                             (write/flush (thread-receive) out)
-                                             (loop))))))
+                                           (write/flush (thread-receive) out)
+                                           (loop)))))
               (thread (λ ()
                         (let loop ()
-                          (when (thread-send receiver 'keepalive #f)
-                            (sleep 10)
-                            (loop)))))
-              (define session (register-new-session! user receiver))
+                          (thread-send receiver 'keepalive #f)
+                          (sleep 10)
+                          (loop))))
               (write/flush 'ok out)
               (parameterize ([current-user user]
                              [current-role (user-role user)]
-                             [current-session session])
+                             [current-session (register-new-session! user receiver)])
                 (get-commands-loop in receiver))]
              [else (write/flush auth-result out)]))
      (λ () (custodian-shutdown-all (current-custodian))))))
@@ -64,8 +60,8 @@
       [(list-rest id cmd)
        (thread (λ ()
                  (thread-send receiver
-                              (cons id (process-command cmd)) #f)))]
-      [_ (thread-send receiver 'bad-syntax #f)])
+                              (cons id (process-command cmd)))))]
+      [_ (thread-send receiver 'bad-syntax)])
     (get-commands-loop in receiver)))
 
 (define (exn->list exn)
