@@ -56,7 +56,7 @@
   (define cmd (read/timeout in))
   (unless (eof-object? cmd)
     (match cmd
-      ['keepalive #t]
+      ['keepalive (set-online! (current-user) #t) #t]
       [(list-rest id cmd)
        (thread (λ ()
                  (thread-send receiver

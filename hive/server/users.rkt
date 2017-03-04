@@ -96,7 +96,7 @@
           [(string=? password (user-password found-user))
            (set-online! found-user #t)
            (define user-box (make-custodian-box (current-custodian) user))
-           ;; when current thread dies, main-custodian still live
+           ;; when current thread dies, main-custodian still alive
            (parameterize ([current-custodian main-custodian])
              (thread (λ ()
                        (sync user-box)
