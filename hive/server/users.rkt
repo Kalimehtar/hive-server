@@ -73,8 +73,11 @@
   (map send-change users-monitor))
 
 (define (set-online! user value)
-  (set-user-online! user value)
-  (on-change user))
+  (cond
+    [(eq? (user-online user) value) #f]
+    [else
+     (set-user-online! user value)
+     (on-change user)]))
 
 (register-std-command! '(users monitor)
                        (λ ()
