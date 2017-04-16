@@ -58,11 +58,22 @@
   (check-equal? (do-command 'test '(0 1)) '((1 2)))
   (check-equal? (do-command 'test '(1 1)) '((3 4))))
 
+(define (take* list0 n0)
+  (if (zero? n0)
+      list0
+      (let loop ([list list0] [n n0])
+        (cond [(zero? n) '()]
+              [(pair? list) (cons (car list) (loop (cdr list) (sub1 n)))]
+              [else '()]))))
+
+(define (drop* list0 n0)
+  (let loop ([list list0] [n n0])
+    (cond [(zero? n) list]
+          [(pair? list) (loop (cdr list) (sub1 n))]
+          [else list])))
+
 (define ((list-command items-proc [prepare (λ (x) x)]) skip limit)
   (map (cut serialize <> prepare)
-       ((λ (lst limit)
-          (if (= limit 0) lst (take lst limit)))
-        (drop (items-proc) skip)
-        limit)))
+       (take* (drop* (items-proc) skip) limit)))
 
 (module+ test)
