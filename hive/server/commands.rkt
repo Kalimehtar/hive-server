@@ -1,15 +1,14 @@
 #lang racket/base
 
-(module+ test
-  (require rackunit))
-
 (provide register-command!
          register-std-command!
          do-command
          do-std-command
          list-command)
 
-(require hive/common/serialize racket/function)
+(require hive/common/serialize racket/function racket/list srfi/26)
+
+(module+ test (require rackunit))
 
 (define commands (make-hash))
 (define std-commands (make-hash))
@@ -34,6 +33,7 @@
   (check-equal? (do-command 'test '(2 3)) '(2 3)))
 
 (define (do-command id args)
+  (log-debug "~a: ~a ~a" 'do-command id args)
   (apply (hash-ref commands
                    id 
                    (λ () (raise-argument-error 'do-command "id of command registered with register-command!" id)))
@@ -43,9 +43,10 @@
   (check-equal? (do-std-command 'test '(2 3)) '(2 3)))
 
 (define (do-std-command id args)
+  (log-debug "~a: ~a ~a" 'do-std-command id args)
   (apply (hash-ref std-commands
                    id 
-                   (λ () (raise-argument-error 'do-command "id of command registered with register-std-command!" id)))
+                   (λ () (raise-argument-error 'do-std-command "id of command registered with register-std-command!" id)))
          args))
 
 ;;; standard commands
@@ -57,12 +58,11 @@
   (check-equal? (do-command 'test '(0 1)) '((1 2)))
   (check-equal? (do-command 'test '(1 1)) '((3 4))))
 
-(define ((list-command items-proc [prepare identity]) skip limit)
-    (define last-pos (+ skip limit))
-    (for/list ([item (in-list (items-proc))]
-               [i (in-naturals)]
-               #:when (>= i skip)
-               #:break (and (> limit 0) (>= i last-pos)))
-      (serialize item prepare)))
+(define ((list-command items-proc [prepare (λ (x) x)]) skip limit)
+  (map (cut serialize <> prepare)
+       ((λ (lst limit)
+          (if (= limit 0) lst (take lst limit)))
+        (drop (items-proc) skip)
+        limit)))
 
 (module+ test)
