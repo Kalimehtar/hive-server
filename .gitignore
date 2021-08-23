@@ -1,0 +1,6 @@
+
+hive/server.bak
+hive/server/compiled/drracket/errortrace/catalog_rkt.dep
+*.zo
+*.dep
+*.bak

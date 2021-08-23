@@ -6,7 +6,7 @@
          do-std-command
          list-command)
 
-(require hive/common/serialize racket/function racket/list srfi/26)
+(require hive/common/serialize)
 
 (module+ test (require rackunit))
 
@@ -36,7 +36,8 @@
   (log-debug "~a: ~a ~a" 'do-command id args)
   (apply (hash-ref commands
                    id 
-                   (λ () (raise-argument-error 'do-command "id of command registered with register-command!" id)))
+                   (λ () (raise-argument-error
+                          'do-command "id of command registered with register-command!" id)))
          args))
 
 (module+ test
@@ -46,7 +47,8 @@
   (log-debug "~a: ~a ~a" 'do-std-command id args)
   (apply (hash-ref std-commands
                    id 
-                   (λ () (raise-argument-error 'do-std-command "id of command registered with register-std-command!" id)))
+                   (λ () (raise-argument-error
+                          'do-std-command "id of command registered with register-std-command!" id)))
          args))
 
 ;;; standard commands
@@ -73,7 +75,7 @@
           [else list])))
 
 (define ((list-command items-proc [prepare (λ (x) x)]) skip limit)
-  (map (cut serialize <> prepare)
+  (map (λ (x) (serialize x prepare))
        (take* (drop* (items-proc) skip) limit)))
 
 (module+ test)

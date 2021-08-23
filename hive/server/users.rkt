@@ -6,8 +6,7 @@
          "commands.rkt"
          "file-store.rkt"         
          "session.rkt"
-         "catalog.rkt"
-         srfi/2)
+         "catalog.rkt")
 
 (define current-user (make-parameter #f))
 (define current-role (make-parameter #f))
@@ -46,22 +45,22 @@
   (struct-copy user x [password ""]))
 
 (register-std-command! '(users list)
-                       (list-command (λ () users)
-                                     without-password))
+                       (list-command (λ () users) without-password))
 
 (register-std-command! '(users save!)
                        (λ (id name password role)                        
                          (or (for/first ([user users]
-                                         #:when (= (object-id user) id))
-                               (when (or (eq? (current-role) 'admin)
-                                         (and (eq? (current-user) user)
-                                              (eq? role 'user)))
-                                 (set-user-name! user name)
-                                 (set-user-password! user password)
-                                 (set-user-role! user role)
-                                 (on-change user)
-                                 (store-save! user)
-                                 'ok))
+                                         #:when (and (= (object-id user) id)
+                                                     (or (eq? (current-role) 'admin)
+                                                         (and (eq? (current-user) user)
+                                                              (eq? role 'user)))))
+                               (set-user-name! user name)
+                               (set-user-password! user password)
+                               (when (eq? (current-role) 'admin)
+                                 (set-user-role! user role))
+                               (on-change user)
+                               (store-save! user)
+                               'ok)
                              'failed)))
 
 (define users-monitor null)

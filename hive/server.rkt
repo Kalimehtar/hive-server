@@ -97,7 +97,9 @@
                                              (get-commands-loop in receiver)
                                              (sleep 0.1)
                                              (thread-send receiver #f)))))
-                "(2 error struct:exn:fail:contract \"do-command: contract violation\\n  expected: id of command registered with register-command!\\n  given: 'no-command\")\n"))
+                (string-append
+                 "(2 error struct:exn:fail:contract \"do-command: contract violation\\n  expected:"
+                 " id of command registered with register-command!\\n  given: 'no-command\")\n")))
 
 (define (accept-and-handle listener)
   (parameterize ([current-custodian (make-custodian)])
